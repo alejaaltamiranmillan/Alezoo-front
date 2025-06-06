@@ -5,6 +5,8 @@ import SendIcon from '@mui/icons-material/Send';
 import PetsIcon from '@mui/icons-material/Pets';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const ChatContainer = styled(Paper)(({ theme }) => ({
   height: '90vh',
@@ -33,6 +35,9 @@ function Chat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const API_URL = 'https://alezoo-back.vercel.app/api';
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -43,9 +48,15 @@ function Chat() {
   useEffect(() => {
     const loadChatHistory = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/chat/history', {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
+
+        const response = await axios.get(`${API_URL}/chat/history`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           }
         });
         setMessages(response.data.map(msg => ({
@@ -59,11 +70,17 @@ function Chat() {
     };
 
     loadChatHistory();
-  }, []);
+  }, [navigate]);
 
   const handleSend = async () => {
     if (!input.trim() || loading) return;
     
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
     const userMessage = {
       content: input,
       isAI: false,
@@ -75,17 +92,11 @@ function Chat() {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('No hay token de autenticación');
-      }
-
-      const response = await axios.post('http://localhost:5000/api/chat/message', 
+      const response = await axios.post(`${API_URL}/chat/message`, 
         { message: input },
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            'Authorization': `Bearer ${token}`
           }
         }
       );
@@ -100,14 +111,6 @@ function Chat() {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // Mostrar mensaje de error al usuario
-      const errorMessage = {
-        content: "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta de nuevo.",
-        isAI: true,
-        isError: true,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
