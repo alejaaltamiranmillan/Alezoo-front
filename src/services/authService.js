@@ -18,21 +18,17 @@ const authService = {
         {
           headers: {
             'Content-Type': 'application/json',
-            Accept: 'application/json'
+            'Accept': 'application/json'
           },
-          withCredentials: true
+          withCredentials: false // Changed to false for Vercel deployment
         }
       );
       if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem('user', JSON.stringify(response.data));
       }
       return response.data;
     } catch (error) {
-      throw new AuthError(
-        error.response?.data?.message || 'Error al iniciar sesión',
-        error.response?.status
-      );
+      throw error;
     }
   },
 
