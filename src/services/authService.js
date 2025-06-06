@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = 'https://alezoo-back.vercel.app/api';
 
 class AuthError extends Error {
   constructor(message, code) {
@@ -12,10 +12,17 @@ class AuthError extends Error {
 const authService = {
   async login(email, password) {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        email,
-        password
-      });
+      const response = await axios.post(
+        `${API_URL}/auth/login`,
+        { email, password },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json'
+          },
+          withCredentials: true
+        }
+      );
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
